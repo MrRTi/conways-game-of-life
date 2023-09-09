@@ -78,16 +78,16 @@ class GameOfLife
   end
 
   def alive_neighbours_count(row, column)
-    [-1, 0, 1].reduce(0) do |row_count, row_offset|
-      columns_count = [-1, 0, 1].reduce(0) do |column_count, column_offset|
+    [-1, 0, 1].reduce(0) do |count, row_offset|
+      row_count = [-1, 0, 1].reduce(0) do |columns_count, column_offset|
         same_cell = [row_offset, column_offset].all?(&:zero?)
         neighbour_alive = grid[[row + row_offset, column + column_offset]]
-        next column_count if same_cell
+        next columns_count if same_cell
 
-        neighbour_alive ? column_count + 1 : column_count
+        neighbour_alive ? columns_count + 1 : columns_count
       end
 
-      row_count + columns_count
+      count + row_count
     end
   end
 
