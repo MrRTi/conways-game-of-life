@@ -1,48 +1,63 @@
+# frozen_string_literal: true
+
+# This is Conways game of life
 class GameOfLife
   PERCENTAGE_OF_DEAD_CELLS_AT_START = 90
   FREEZE_FRAME_SECONDS = 0.2
   ROWS_COUNT = 20
   COLUMNS_COUNT = 150
-  ALIVE_CELL_SYMBOL = "@"
-  DEAD_CELL_SYMBOL = " "
+  ALIVE_CELL_SYMBOL = '@'
+  DEAD_CELL_SYMBOL = ' '
 
   def initialize
     @grid = generate
+    @init_alive_cells_count = alive_cells
+    @generation = 0
   end
 
-  attr_reader :grid
+  attr_reader :grid, :generation, :init_alive_cells_count
 
   def run
-    generation = 0
-    init_alive_cells_count = grid.keys.size
-    alive_cells = init_alive_cells_count
+    render_loop
 
-    while(alive_cells > 0) do
-     render_frame
-     alive_cells = grid.keys.size
-     p "Game of life. Generation # #{generation}"
-     p "Alive cells: #{alive_cells}. Diff from start: #{alive_cells - init_alive_cells_count}"
-     p "Press Ctrl+C to exit"
-
-
-     calculate_next_generation
-     generation += 1
-     sleep(FREEZE_FRAME_SECONDS)
-    end
-
-    clear_screen
-    p "All cells are dead. Game over"
+    game_over
   end
 
   private
 
+  def alive_cells
+    grid.keys.size
+  end
+
+  def render_loop
+    while alive_cells.positive?
+      render_frame
+
+      calculate_next_generation
+      @generation += 1
+      sleep(FREEZE_FRAME_SECONDS)
+    end
+  end
+
   def render_frame
     clear_screen
-    printf grid_as_string 
+    printf grid_as_string
+    render_info_lines
   end
 
   def clear_screen
     puts `clear`
+  end
+
+  def render_info_lines
+    p "Game of life. Generation # #{generation}"
+    p "Alive cells: #{alive_cells}. Diff from start: #{alive_cells - init_alive_cells_count}"
+    p 'Press Ctrl+C to exit'
+  end
+
+  def game_over
+    clear_screen
+    p 'All cells are dead. Game over'
   end
 
   def calculate_next_generation
@@ -59,31 +74,31 @@ class GameOfLife
   def cell_next_state(row, column)
     alive = grid[[row, column]]
     alive_neighbours_count = alive_neighbours_count(row, column)
-    alive_neighbours_count === 3 || alive && alive_neighbours_count === 2
+    alive_neighbours_count == 3 || alive && alive_neighbours_count == 2
   end
 
   def alive_neighbours_count(row, column)
-    [-1, 0, 1].reduce(0) do |acc, row_offset|
-      column_count = [-1, 0, 1].reduce(0) do |acc, column_offset|
-        same_cell = [row_offset, column_offset].all? {|offset| offset === 0 }
+    [-1, 0, 1].reduce(0) do |row_count, row_offset|
+      columns_count = [-1, 0, 1].reduce(0) do |column_count, column_offset|
+        same_cell = [row_offset, column_offset].all?(&:zero?)
         neighbour_alive = grid[[row + row_offset, column + column_offset]]
-        next acc if same_cell
-        
-        neighbour_alive ? acc + 1 : acc
+        next column_count if same_cell
+
+        neighbour_alive ? column_count + 1 : column_count
       end
 
-      acc + column_count
+      row_count + columns_count
     end
   end
 
   def grid_as_string
-    (0..ROWS_COUNT).reduce("") do |acc, row|
-      column = (0..COLUMNS_COUNT).reduce("") do |acc, column|
-        cell = grid[[row,column]] ? ALIVE_CELL_SYMBOL : DEAD_CELL_SYMBOL
-        acc + cell
+    (0..ROWS_COUNT).reduce('') do |acc_row, row|
+      column_str = (0..COLUMNS_COUNT).reduce('') do |acc_column, column|
+        cell = grid[[row, column]] ? ALIVE_CELL_SYMBOL : DEAD_CELL_SYMBOL
+        acc_column + cell
       end
 
-      acc + column + "\n"
+      "#{acc_row}#{column_str}\n"
     end
   end
 
